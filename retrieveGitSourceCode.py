@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import subprocess
+import csv
 from subprocess import call
 
 javaExtension = re.compile('.*\.java$', re.IGNORECASE)
@@ -16,7 +17,7 @@ COMMIT_HASH = 3
 
 
 def getFileInfo(rootDir):
-	result = []
+	result = {}
 	info = {}
 	for root, subFolder, files in os.walk(rootDir):
 		for fileName in files:
@@ -31,7 +32,10 @@ def getFileInfo(rootDir):
 					#print fileSize, root, fileSize, " 1234"
 
 					# file name; package name; file size
-					result.append(fileName + ";;" + root + ";;" + str(fileSize))
+					#result.append(fileName + ";;" + root + ";;" + str(fileSize))
+					result["/".join(os.path.join(root,
+						fileName).split("/")[2:])] = [fileName, root,
+								str(fileSize)]
 					info["/".join(os.path.join(root, fileName).split("/")[2:])] = [root, fileSize]
 
 	return (result, info)
@@ -45,6 +49,10 @@ def copySourceFiles(srcDir, destDir):
 				#print src, destDir
 				subprocess.call("cp " + src + " " + destDir, shell=True)
 				#call(["cp", src , os.path.join(folder, version_num+"#"+filename)], shell=True)
+
+def getCodeChurn(fileName, fileInfoMap):
+	#for fileName
+	return
 
 def iterateGitTags(rootDir):
 	os.chdir(os.path.abspath(rootDir))
@@ -66,7 +74,7 @@ def iterateGitTags(rootDir):
 
 		# since we change cwd, we need to go one directory above
 		# then we get the file names, package names,and LOC
-		(info, fileInfoMap) = getFileInfo("../"+rootDir)
+		(bugdata, fileInfoMap) = getFileInfo("../"+rootDir)
 
 		# command for getting commit logs
 		# author;;commiters;;commit message;;commit hash
@@ -95,11 +103,15 @@ def iterateGitTags(rootDir):
 						# if this file is in the list of source code files that
 						# we get from the git 
 						if f in fileInfoMap:
-							#print "innnnnnnnnnnnnnn"
-							fileInfoMap[f].append(message)
-							fileInfoMap[f].append(commitHash)
 							#print fileInfoMap[f]
+							if len(fileInfoMap[f]) <= MESSAGE:
+								fileInfoMap[f].append([])
+
+							fileInfoMap[f][MESSAGE].append((message, commitHash))
+							#print fileInfoMap[f]
+							#exit(0)
 							#print fileInfoMap
+							
 					except KeyError:
 						print "key error"
 						exit(0)
@@ -108,17 +120,31 @@ def iterateGitTags(rootDir):
 			pass
 			#print splittedLog
 			#continue
-
+		# iterate through every file
 		for fileName, fileInfo in fileInfoMap.items():
-			msg = fileInfo[MESSAGE]
-			for matchedKey in re.findall(issueKey, msg):
-				print fileName, msg, matchedKey
-				print fileInfo
-		
+			#print "*************************begin****************************"
+			numCommits = 0
+			# for each commit message that the file has
+			for msg in fileInfo[MESSAGE]:
+				#print "----------------- ", msg, " ------------------"
+				numCommits = numCommits + 1
+				for matchedKey in re.findall(issueKey, msg[0]):
+					print matchedKey
+					print fileName, fileInfo
+			bugdata[fileName].append(numCommits)
+			#print "*************************end****************************"
+		# generate bugdata
+
+		bugOutputFile = csv.writer(open("../"+t+'.csv', 'wb'), delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits"])
+		for k,v in bugdata.items():
+			bugOutputFile.writerow(v)
+	 
+	
 
 def main():
 	root = sys.argv[1]
-	iterateGitTags(root)
+	bugdata = iterateGitTags(root)
 	#result = getSourceCodeFiles(root)
 
 	#for r in result:
