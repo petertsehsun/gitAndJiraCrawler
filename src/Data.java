@@ -1,0 +1,29 @@
+
+
+
+public class Data {
+	private String id;
+	private String key;
+	private Fields fields;
+	
+    public Fields getFields() {
+		return fields;
+	}
+
+	public void setFields(Fields fields) {
+		this.fields = fields;
+	}
+
+	public String getID() { return id; }
+
+    public void setID(String id) { this.id = id; }
+
+    public String getkey() { return key; }
+
+    public void setkey(String key) { this.key = key; }
+
+    public String toString() {
+        return String.format("key:%s; IssueType: %s, Resolution:%s; ", key, fields.issuetype.getName(), fields.resolution.getName());
+    }
+
+}
