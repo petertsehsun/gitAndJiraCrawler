@@ -6,7 +6,13 @@ from subprocess import call
 
 javaExtension = re.compile('.*\.java$', re.IGNORECASE)
 cExtension = re.compile('.*\.c[p]$', re.IGNORECASE)
-issueKey = re.compile('[a-zA-Z]*[0-9]*-[0-9]*', re.IGNORECASE)
+issueKey = re.compile('\s[a-zA-Z0-9]+\-[0-9]+\s', re.IGNORECASE)
+
+# constant for fileInfo
+PACKAGE_NAME = 0
+LOC = 1
+MESSAGE = 2
+COMMIT_HASH = 3
 
 
 def getFileInfo(rootDir):
@@ -75,8 +81,8 @@ def iterateGitTags(rootDir):
 			for log in logs:
 				log = log.replace("\"", "")
 				splittedLog = log.split(";;")
-				message = splittedLog[2].strip()
-				commitHash = splittedLog[3].strip()
+				message = splittedLog[MESSAGE].strip()
+				commitHash = splittedLog[COMMIT_HASH].strip()
 				command = "git show --pretty=\"format:\" --name-only "+commitHash
 
 				# files that are associated with the commit
@@ -91,6 +97,7 @@ def iterateGitTags(rootDir):
 						if f in fileInfoMap:
 							#print "innnnnnnnnnnnnnn"
 							fileInfoMap[f].append(message)
+							fileInfoMap[f].append(commitHash)
 							#print fileInfoMap[f]
 							#print fileInfoMap
 					except KeyError:
@@ -103,7 +110,10 @@ def iterateGitTags(rootDir):
 			#continue
 
 		for fileName, fileInfo in fileInfoMap.items():
-			fileName, fileInfo
+			msg = fileInfo[MESSAGE]
+			for matchedKey in re.findall(issueKey, msg):
+				print fileName, msg, matchedKey
+				print fileInfo
 		
 
 def main():
