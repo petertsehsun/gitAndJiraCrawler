@@ -50,18 +50,32 @@ def copySourceFiles(srcDir, destDir):
 				subprocess.call("cp " + src + " " + destDir, shell=True)
 				#call(["cp", src , os.path.join(folder, version_num+"#"+filename)], shell=True)
 
-def getCodeChurn(fileName, fileInfoMap):
-	#for fileName
-	return
+def getCodeChurn(filePath):
+	commitHist = subprocess.Popen("git log -p --stat " + filePath,
+			stdout=subprocess.PIPE, shell=True).communicate()[0]
+	insert = re.findall('[0-9]+\sinsertions', commitHist)
+	delete = re.findall('[0-9]+\sdeletions', commitHist)
+
+	numInsert = 0
+	numDelete = 0
+
+	if len(insert) > 0:
+		numInsert = insert[0].split(" ")[0]
+
+	if len(delete) > 0:
+		numDelete = delete[0].split(" ")[0]
+
+	return (numInsert, numDelete)
 
 def iterateGitTags(rootDir):
 	os.chdir(os.path.abspath(rootDir))
 	print os.getcwd(), " cur dir"
 	tags = subprocess.Popen(['git', 'tag'], stdout=subprocess.PIPE).communicate()[0]
 	tags = tags.strip()
+	tags = "dummy\nv1.5.3\nv1.5.4"
+	prevTag = None
 	# checkout each tag (version) and iterate each version
 	for (i, t) in enumerate(tags.split("\n")):
-
 		if i == 0:
 			continue
 		print t
@@ -125,21 +139,61 @@ def iterateGitTags(rootDir):
 			#print "*************************begin****************************"
 			numCommits = 0
 			# for each commit message that the file has
-			for msg in fileInfo[MESSAGE]:
-				#print "----------------- ", msg, " ------------------"
-				numCommits = numCommits + 1
-				for matchedKey in re.findall(issueKey, msg[0]):
-					print matchedKey
-					print fileName, fileInfo
-			bugdata[fileName].append(numCommits)
-			#print "*************************end****************************"
-		# generate bugdata
+			try:
+				bugCount = 0
+				for msg in fileInfo[MESSAGE]:
+					#print "----------------- ", msg, " ------------------"
+					numCommits = numCommits + 1
+					# first vision - no bug data avail
+					if prevTag == None:
+						continue
+					for matchedKey in re.findall(issueKey, msg[0]):
+						matchedKey = matchedKey.strip()
+						
+						# guery the JIRA repo
+						os.chdir("../src/")
+						print os.getcwd(), " cur dir"
+						print matchedKey
+						queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
+						print queryResult
+						if queryResult.split(";")[1].strip() == "Bug":
+							bugCount = bugCount + 1
+						os.chdir("../"+rootDir)
+						print os.getcwd(), " cur dir"
+				try:
+					# make sure this is not the first version
+					if prevTag != None:
+						#print(bugdataOld[fileName])
+						bugdataOld[fileName].append(bugCount)
+						
+				except KeyError:
+					sys.stderr.write("no such file: "+ fileName+ " version: "+
+							t+"\n")
+				bugdata[fileName].append(numCommits)
+				numInsert, numDelete = getCodeChurn(os.path.abspath(fileName))
+				bugdata[fileName].append(numInsert)
+				bugdata[fileName].append(numDelete)
+				#print "*************************end****************************"
+			except IndexError:
+				print "index error: ", t
 
+		"""
 		bugOutputFile = csv.writer(open("../"+t+'.csv', 'wb'), delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-		bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits"])
+		bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits", "numInsertions", "numDeletions"])
 		for k,v in bugdata.items():
 			bugOutputFile.writerow(v)
-	 
+		"""
+		# generate bugdata
+		if prevTag != None:	
+			bugOutputFile = csv.writer(open("../"+prevTag+'.csv', 'wb'), delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+			bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",
+				"numInsertions", "numDeletions", "bugs"])
+			for k,v in bugdataOld.items():
+				bugOutputFile.writerow(v)
+		
+		prevTag = t
+		bugdataOld = bugdata
+			 
 	
 
 def main():

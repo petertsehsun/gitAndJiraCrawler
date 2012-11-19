@@ -23,7 +23,8 @@ public class Data {
     public void setkey(String key) { this.key = key; }
 
     public String toString() {
-        return String.format("key:%s; IssueType: %s, Resolution:%s; ", key, fields.issuetype.getName(), fields.resolution.getName());
+	// key; issuetype; resolution
+        return String.format("%s; %s; %s", key, fields.issuetype.getName(), fields.resolution.getName());
     }
 
 }
