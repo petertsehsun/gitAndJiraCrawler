@@ -65,13 +65,13 @@ def getCodeChurn(filePath):
 		for i in insert:
 			try:
 				numInsert = numInsert + int(i[0].split(" ")[0])
-			except ValueError::
+			except ValueError:
 				pass
 	if len(delete) > 0:
 		for d in delete:
 			try:
 				numDelete = numDelete + int(d[0].split(" ")[0])
-			except ValueError::
+			except ValueError:
 				pass
 
 	return (numInsert, numDelete)
@@ -131,10 +131,17 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 	for fileName, fileInfo in fileInfoMap.items():
 		#print "*************************begin****************************"
 		numCommits = 0
-		# for each commit message that the file has
+		numUniqueCommitters = 0
 		try:
-			#for msg in fileInfo[MESSAGE]:
+			# get num of commits
 			numCommits = len(fileInfo[MESSAGE])
+			# get num of unique committers
+			committers = subprocess.Popen("git log --pretty=format:\"%an\" " +
+					fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
+			uniq = set()
+			for c in committers.split("\n"):
+				uniq.add(c)
+			numUniqueCommitters = len(uniq)
 		except IndexError:
 			#print "index error: ", fileName
 			pass
@@ -143,15 +150,19 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 		numInsert, numDelete = getCodeChurn(os.path.abspath(fileName))
 		bugdataOld[fileName].append(numInsert)
 		bugdataOld[fileName].append(numDelete)
-
+		bugdataOld[fileName].append(numUniqueCommitters)
 	return bugdataOld
 	
-def getBugCounts(fileInfoMap, bugdataOld, rootDir):
+def getIssueKeyInfo(fileInfoMap, rootDir):
+	issueKeyInfo = {}
 	# iterate through every file
 	for fileName, fileInfo in fileInfoMap.items():
 		# for each commit message that the file has
 		try:
 			bugCount = 0
+			newFeatureCount = 0
+			numImprovement = 0
+			numTest = 0
 			for msg in fileInfo[MESSAGE]:
 
 				for matchedKey in re.findall(issueKey, msg[0]):
@@ -163,17 +174,27 @@ def getBugCounts(fileInfoMap, bugdataOld, rootDir):
 					if queryResult.split(";")[1].strip() == "Bug":
 						bugCount = bugCount + 1
 						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+					if queryResult.split(";")[1].strip() == "New Feature":
+						newFeatureCount = newFeatureCount + 1
+					if queryResult.split(";")[1].strip() == "Improvement":
+						numImprovement = numImprovement + 1
+					if queryResult.split(";")[1].strip() == "Test":
+						numTest = numTest + 1
 					os.chdir("../"+rootDir)
 					print matchedKey
 					print queryResult
+			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
+					newFeatureCount, "improvement": numImprovement, "test" : numTest}
+			"""
 			try:
 				# make sure this is not the first version
 				bugdataOld[fileName].append(bugCount)
 			except KeyError:
 				sys.stderr.write("no such file: "+ fileName+"\n")
+			"""
 		except IndexError:
 			print "get bug count index error, no such file: ", fileName
-	return bugdataOld 
+	return issueKeyInfo#bugdataOld 
 	
 
 def main():
@@ -191,10 +212,30 @@ def main():
 	print "getting bug data..."
 	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, v2)
 	# update bugdataOld
-	bugdataOld = getBugCounts(fileInfoMapV2, bugdataOld, root)
+	#bugdataOld = getBugCounts(fileInfoMapV2, bugdataOld, root)
+	issueKeyInfo = getIssueKeyInfo(fileInfoMapV2, root)
+
+	#issueKeyInfo[fileName] = {"bug": bugCount, "feature":
+	#	                    newFeatureCount, "improvement": numImprovement,
+	#						"test" : numTest}
+	for fileName, metrics in bugdataOld.items():
+		if fileName in issueKeyInfo:
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["feature"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["improvement"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["test"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["bug"])
+		# this file does not have any issue key associated with it in commits
+		else:
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
+
 
 	bugOutputFile = csv.writer(open("../"+v1+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
-	bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",	"numInsertions", "numDeletions", "bugs"])
+	bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",
+		"numInsertions", "numDeletions", "numUniqueCommitters", "feature",
+		"improvement", "test", "bugs"])
 	for k,v in bugdataOld.items():
 		bugOutputFile.writerow(v)
 	
