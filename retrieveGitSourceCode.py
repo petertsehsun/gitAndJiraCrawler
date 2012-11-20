@@ -52,9 +52,9 @@ def copySourceFiles(srcDir, destDir):
 				#call(["cp", src , os.path.join(folder, version_num+"#"+filename)], shell=True)
 
 def getCodeChurn(filePath):
-	commitHist = subprocess.Popen("git log -p --stat " + filePath,
-			stdout=subprocess.PIPE, shell=True).communicate()[0]
-	
+	#commitHist = subprocess.Popen("git log -p --stat " + filePath ,stdout=subprocess.PIPE, shell=True).communicate()[0]
+	commitHist = subprocess.Popen("git log --oneline --shortstat " + filePath, stdout=subprocess.PIPE, shell=True).communicate()[0]
+
 	insert = re.findall('[0-9]+\sinsertions', commitHist)
 	delete = re.findall('[0-9]+\sdeletions', commitHist)
 
@@ -62,10 +62,17 @@ def getCodeChurn(filePath):
 	numDelete = 0
 
 	if len(insert) > 0:
-		numInsert = insert[0].split(" ")[0]
-
+		for i in insert:
+			try:
+				numInsert = numInsert + int(i[0].split(" ")[0])
+			except ValueError::
+				pass
 	if len(delete) > 0:
-		numDelete = delete[0].split(" ")[0]
+		for d in delete:
+			try:
+				numDelete = numDelete + int(d[0].split(" ")[0])
+			except ValueError::
+				pass
 
 	return (numInsert, numDelete)
 
@@ -152,15 +159,13 @@ def getBugCounts(fileInfoMap, bugdataOld, rootDir):
 						
 					# guery the JIRA repo
 					os.chdir("../src/")
-					print os.getcwd(), " cur dir"
-					print matchedKey
 					queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
-					print queryResult
 					if queryResult.split(";")[1].strip() == "Bug":
 						bugCount = bugCount + 1
 						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 					os.chdir("../"+rootDir)
-					print os.getcwd(), " cur dir"
+					print matchedKey
+					print queryResult
 			try:
 				# make sure this is not the first version
 				bugdataOld[fileName].append(bugCount)
@@ -181,7 +186,7 @@ def main():
 	print "getting file info..."
 	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, v1)
 	print "computing commit metrics..."
-	#bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1)
+	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1)
 
 	print "getting bug data..."
 	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, v2)
