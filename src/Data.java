@@ -26,7 +26,8 @@ public class Data {
 	// key; issuetype; resolution
 	
         //return String.format("%s; %s; %s", key, fields.issuetype.getName(), fields.resolution.getName());
-	return String.format("%s; %s; %s", key, (fields.issuetype!=null?fields.issuetype.getName():""), (fields.resolution!=null?fields.resolution.getName():""));
+	//return String.format("%s; %s; %s", key, (fields.issuetype!=null?fields.issuetype.getName():""), (fields.resolution!=null?fields.resolution.getName():""));
+	return String.format("%s; %s; %s; %s", key, (fields.issuetype!=null?fields.issuetype.getName():""), (fields.resolution!=null?fields.resolution.getName():""), (fields.priority!=null?fields.priority.getName():""));
     }
 
 }
