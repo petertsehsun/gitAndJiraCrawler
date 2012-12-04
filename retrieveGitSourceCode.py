@@ -174,6 +174,9 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 		#print "*************************begin****************************"
 		numCommits = 0
 		numUniqueCommitters = 0
+		minor = 0
+		major = 0
+		ownership = 0
 		try:
 			# get num of commits
 			numCommits = len(fileInfo[MESSAGE])
@@ -184,7 +187,6 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 			for c in committers.split("\n"):
 				uniq.add(c)
 			numUniqueCommitters = len(uniq)
-
 			totalFileExp = 0
 			# this metric may be wrong
 			for author in uniq:
@@ -198,9 +200,11 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 		bugdataOld[fileName].append(numInsert)
 		bugdataOld[fileName].append(numDelete)
 		bugdataOld[fileName].append(numUniqueCommitters)
-		#bugdataOld[fileName].append(minor)
-		#bugdataOld[fileName].append(major)
-		#bugdataOld[fileName].append(ownership)
+		bugdataOld[fileName].append(totalFileExp)
+		bugdataOld[fileName].append(minor)
+		bugdataOld[fileName].append(major)
+		bugdataOld[fileName].append(ownership)
+		print numCommits, numInsert, numDelete, numUniqueCommitters, totalFileExp, minor, major, ownership
 	return bugdataOld
 	
 def getIssueKeyInfo(fileInfoMap, rootDir):
