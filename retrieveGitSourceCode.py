@@ -41,6 +41,7 @@ def getFileInfo(rootDir):
 
 	return (result, info)
 
+
 def copySourceFiles(srcDir, destDir):
 	for root, subFolder, files in os.walk(srcDir):
 		for fileName in files:
@@ -51,30 +52,6 @@ def copySourceFiles(srcDir, destDir):
 				subprocess.call("cp " + src + " " + destDir, shell=True)
 				#call(["cp", src , os.path.join(folder, version_num+"#"+filename)], shell=True)
 
-def getCodeChurn(filePath):
-	#commitHist = subprocess.Popen("git log -p --stat " + filePath ,stdout=subprocess.PIPE, shell=True).communicate()[0]
-	commitHist = subprocess.Popen("git log --oneline --shortstat " + filePath, stdout=subprocess.PIPE, shell=True).communicate()[0]
-
-	insert = re.findall('[0-9]+\sinsertions', commitHist)
-	delete = re.findall('[0-9]+\sdeletions', commitHist)
-
-	numInsert = 0
-	numDelete = 0
-
-	if len(insert) > 0:
-		for i in insert:
-			try:
-				numInsert = numInsert + int(i[0].split(" ")[0])
-			except ValueError:
-				pass
-	if len(delete) > 0:
-		for d in delete:
-			try:
-				numDelete = numDelete + int(d[0].split(" ")[0])
-			except ValueError:
-				pass
-
-	return (numInsert, numDelete)
 
 def iterateAllCommitLogs(logs, fileInfoMap):
 	for log in logs:
@@ -127,6 +104,71 @@ def iterateVersion(absRootDir, rootDir, tag):
 	fileInfoMap = iterateAllCommitLogs(logs, fileInfoMap)
 	return (bugdata, fileInfoMap)
 
+def getOwnershipMetrics(authors, fileName):
+	totalCommits = subprocess.Popen("git log --oneline " + fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
+	minor = 0
+	major = 0
+	ownership = 0
+	totalCommitLen = len(totalCommits.strip().split("\n"))
+	for author in authors:
+		authorCommits = subprocess.Popen("git log --author=\"" + author + "\" --oneline " + fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
+		authorCommitLen = len(authorCommits.strip().split("\n"))
+		ownerPercent = float(authorCommitLen)/totalCommitLen 
+		if ownerPercent <= 0.05 and authorCommitLen >= 1:
+			minor = minor + 1
+		else:
+			major = major + 1
+		if ownerPercent > ownership:
+			ownership = ownerPercent
+	return (minor, major, ownership)
+
+def getAuthorGeneralExp(authorName):
+	exp = subprocess.Popen("git log --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
+	insert = re.findall('[0-9]+\sinsertions', exp)
+	delete = re.findall('[0-9]+\sdeletions', exp)
+
+	numInsert = 0
+	numDelete = 0
+
+	if len(insert) > 0:
+		for i in insert:
+			try:
+				numInsert = numInsert + int(i.split(" ")[0])
+			except ValueError:
+				pass
+	if len(delete) > 0:
+		for d in delete:
+			try:
+				numDelete = numDelete + int(d.split(" ")[0])
+			except ValueError:
+				pass
+	return numInsert+numDelete
+
+def getCodeChurn(filePath):
+	#commitHist = subprocess.Popen("git log -p --stat " + filePath ,stdout=subprocess.PIPE, shell=True).communicate()[0]
+	commitHist = subprocess.Popen("git log --oneline --shortstat " + filePath, stdout=subprocess.PIPE, shell=True).communicate()[0]
+
+	insert = re.findall('[0-9]+\sinsertions', commitHist)
+	delete = re.findall('[0-9]+\sdeletions', commitHist)
+
+	numInsert = 0
+	numDelete = 0
+
+	if len(insert) > 0:
+		for i in insert:
+			try:
+				numInsert = numInsert + int(i.split(" ")[0])
+			except ValueError:
+				pass
+	if len(delete) > 0:
+		for d in delete:
+			try:
+				numDelete = numDelete + int(d.split(" ")[0])
+			except ValueError:
+				pass
+
+	return (numInsert, numDelete)
+
 def computeCommitMetrics(bugdataOld, fileInfoMap):
 	for fileName, fileInfo in fileInfoMap.items():
 		#print "*************************begin****************************"
@@ -142,15 +184,23 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 			for c in committers.split("\n"):
 				uniq.add(c)
 			numUniqueCommitters = len(uniq)
+
+			totalFileExp = 0
+			# this metric may be wrong
+			for author in uniq:
+				totalFileExp = totalFileExp + getAuthorGeneralExp(author)
+			(minor, major, ownership) = getOwnershipMetrics(uniq, fileName)
 		except IndexError:
 			#print "index error: ", fileName
 			pass
-
 		bugdataOld[fileName].append(numCommits)
 		numInsert, numDelete = getCodeChurn(os.path.abspath(fileName))
 		bugdataOld[fileName].append(numInsert)
 		bugdataOld[fileName].append(numDelete)
 		bugdataOld[fileName].append(numUniqueCommitters)
+		#bugdataOld[fileName].append(minor)
+		#bugdataOld[fileName].append(major)
+		#bugdataOld[fileName].append(ownership)
 	return bugdataOld
 	
 def getIssueKeyInfo(fileInfoMap, rootDir):
@@ -234,8 +284,7 @@ def main():
 
 	bugOutputFile = csv.writer(open("../"+v1+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
 	bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",
-		"numInsertions", "numDeletions", "numUniqueCommitters", "feature",
-		"improvement", "test", "bugs"])
+		"numInsertions", "numDeletions", "numUniqueCommitters", "fileExp", "minor", "major", "ownership", "feature",	"improvement", "test", "bugs"])
 	for k,v in bugdataOld.items():
 		bugOutputFile.writerow(v)
 	
