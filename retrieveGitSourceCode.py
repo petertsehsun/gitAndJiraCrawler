@@ -85,14 +85,14 @@ def iterateAllCommitLogs(logs, fileInfoMap):
 			pass
 	return fileInfoMap
 
-def iterateVersion(absRootDir, rootDir, tag):
+def iterateVersion(absRootDir, rootDir, tag, projectName):
 	os.chdir(os.path.abspath(absRootDir))
 	print os.getcwd(), " cur dir"
 	subprocess.call("git checkout "+tag, shell=True)
 
 	# create a directory that store the files in that particular tag
-	subprocess.call("mkdir ../" + tag, shell=True)
-	copySourceFiles(".", "../"+tag)
+	subprocess.call("mkdir ../" + tag+"-"+projectName, shell=True)
+	copySourceFiles(".", "../"+tag+"-"+projectName)
 	# since we change cwd, we need to go one directory above
 	# then we get the file names, package names,and LOC
 	(bugdata, fileInfoMap) = getFileInfo("../"+rootDir)
@@ -292,11 +292,12 @@ def main():
 	root = sys.argv[1]
 	v1 = sys.argv[2]
 	v2 = sys.argv[3]
+	projectName = sys.argv[4]
 
 	absRootDir = os.path.abspath(root)
 	# need to call the following two lines before computing for v2
 	print "getting file info..."
-	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, v1)
+	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, v1, projectName)
 	print "computing commit metrics..."
 	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1)
 
@@ -335,7 +336,7 @@ def main():
 			bugdataOld[fileName].append(0)
 
 
-	bugOutputFile = csv.writer(open("../"+v1+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
+	bugOutputFile = csv.writer(open("../"+v1+"-"+projectName+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
 	bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",
 		"numInsertions", "numDeletions", "numUniqueCommitters", "fileExp", "minor", "major", "ownership", "feature",	"improvement", "test", "bugs", "blocker", "critical", "major", "minor", "trivial"])
 	for k,v in bugdataOld.items():
