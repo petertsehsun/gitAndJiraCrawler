@@ -169,7 +169,19 @@ def getCodeChurn(filePath):
 
 	return (numInsert, numDelete)
 
+def allAuthorExp():
+	committers = subprocess.Popen("git log --pretty=format:\"%an\" ", stdout=subprocess.PIPE, shell=True).communicate()[0]
+	
+	uniq = set()
+	for c in committers.split("\n"):
+		uniq.add(c)
+	authorExp = {}
+	for author in uniq:
+		authorExp[author] = getAuthorGeneralExp(author)
+	return authorExp
+
 def computeCommitMetrics(bugdataOld, fileInfoMap):
+	authorExp = allAuthorExp()
 	for fileName, fileInfo in fileInfoMap.items():
 		#print "*************************begin****************************"
 		numCommits = 0
@@ -189,12 +201,18 @@ def computeCommitMetrics(bugdataOld, fileInfoMap):
 			numUniqueCommitters = len(uniq)
 			totalFileExp = 0
 			# this metric may be wrong
-			for author in uniq:
-				totalFileExp = totalFileExp + getAuthorGeneralExp(author)
+			try:
+				for author in uniq:
+					if author in authorExp:
+						totalFileExp = totalFileExp + authorExp[author]
+			except KeyError:
+				print "key error"
 			(minor, major, ownership) = getOwnershipMetrics(uniq, fileName)
 		except IndexError:
 			#print "index error: ", fileName
 			pass
+		# two more metrics: number of general exp developers
+		# and number of specific exp developers
 		bugdataOld[fileName].append(numCommits)
 		numInsert, numDelete = getCodeChurn(os.path.abspath(fileName))
 		bugdataOld[fileName].append(numInsert)
