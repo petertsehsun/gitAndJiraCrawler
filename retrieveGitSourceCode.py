@@ -231,7 +231,14 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 	for fileName, fileInfo in fileInfoMap.items():
 		# for each commit message that the file has
 		try:
+			# bug types
 			bugCount = 0
+			numBlocker = 0
+			numCritical = 0
+			numMajor = 0
+			numMinor = 0
+			numTrivial = 0
+			#
 			newFeatureCount = 0
 			numImprovement = 0
 			numTest = 0
@@ -243,8 +250,20 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 					# guery the JIRA repo
 					os.chdir("../src/")
 					queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
+					# is this a bug, improvement, new feature, or test
 					if queryResult.split(";")[1].strip() == "Bug":
 						bugCount = bugCount + 1
+						# is a bug, what is the priority
+						if queryResult.split(";")[3].strip() == "Blocker":
+							numBlocker = numBlocker + 1
+						if queryResult.split(";")[3].strip() == "Critical":
+							numCritical = numCritical + 1
+						if queryResult.split(";")[3].strip() == "Major":
+							numMajor = numMajor + 1
+						if queryResult.split(";")[3].strip() == "Minor":
+							numMinor = numMinor + 1
+						if queryResult.split(";")[3].strip() == "Trivial":
+							numMinor = numMinor + 1
 						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 					if queryResult.split(";")[1].strip() == "New Feature":
 						newFeatureCount = newFeatureCount + 1
@@ -256,7 +275,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 					print matchedKey
 					print queryResult
 			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
-					newFeatureCount, "improvement": numImprovement, "test" : numTest}
+					newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 			"""
 			try:
 				# make sure this is not the first version
@@ -290,14 +309,26 @@ def main():
 	#issueKeyInfo[fileName] = {"bug": bugCount, "feature":
 	#	                    newFeatureCount, "improvement": numImprovement,
 	#						"test" : numTest}
+#issueKeyInfo[fileName] = {"bug": bugCount, "feature":
+#					newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 	for fileName, metrics in bugdataOld.items():
 		if fileName in issueKeyInfo:
 			bugdataOld[fileName].append(issueKeyInfo[fileName]["feature"])
 			bugdataOld[fileName].append(issueKeyInfo[fileName]["improvement"])
 			bugdataOld[fileName].append(issueKeyInfo[fileName]["test"])
 			bugdataOld[fileName].append(issueKeyInfo[fileName]["bug"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["blocker"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["critical"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["major"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["minor"])
+			bugdataOld[fileName].append(issueKeyInfo[fileName]["trivial"])
 		# this file does not have any issue key associated with it in commits
 		else:
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
+			bugdataOld[fileName].append(0)
 			bugdataOld[fileName].append(0)
 			bugdataOld[fileName].append(0)
 			bugdataOld[fileName].append(0)
@@ -306,7 +337,7 @@ def main():
 
 	bugOutputFile = csv.writer(open("../"+v1+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
 	bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",
-		"numInsertions", "numDeletions", "numUniqueCommitters", "fileExp", "minor", "major", "ownership", "feature",	"improvement", "test", "bugs"])
+		"numInsertions", "numDeletions", "numUniqueCommitters", "fileExp", "minor", "major", "ownership", "feature",	"improvement", "test", "bugs", "blocker", "critical", "major", "minor", "trivial"])
 	for k,v in bugdataOld.items():
 		bugOutputFile.writerow(v)
 	
