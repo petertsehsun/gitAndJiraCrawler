@@ -306,9 +306,9 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 
 def main():
 	root = sys.argv[1]
-	vpre = sys.argv[2]
-	vcur = sys.argv[3]
-	vpost = sys.argv[4]
+	vcur = sys.argv[2]
+	vpost = sys.argv[3]
+	vpostpost = sys.argv[4]
 	projectName = sys.argv[5]
 
 	# need to double check git tagv1...tagv2
@@ -320,12 +320,12 @@ def main():
 	absRootDir = os.path.abspath(root)
 	# need to call the following two lines before computing for v2
 	print "getting file info..."
-	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vpre, vcur)
+	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vcur, vpost)
 	print "computing commit metrics..."
-	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
+	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vcur, vpost)
 
 	print "getting bug data..."
-	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vpost, projectName, vcur, vpost)
+	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vpost, projectName, vpost, vpostpost)
 	# update bugdataOld
 	#bugdataOld = getBugCounts(fileInfoMapV2, bugdataOld, root)
 	issueKeyInfo = getIssueKeyInfo(fileInfoMapV2, root)
