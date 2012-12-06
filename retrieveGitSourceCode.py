@@ -196,12 +196,15 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 		totalFileExp = 0
 		try:
 			# get num of commits
-			numCommits = len(fileInfo[MESSAGE])
+			if len(fileInfo) > MESSAGE: 
+				numCommits = len(fileInfo[MESSAGE])
+			else:
+				numCommits = 0
 			# get num of unique committers
 			committers = subprocess.Popen("git log " +v1+"..."+v2+ " --pretty=format:\"%an\" " +
 					fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
 			uniq = set()
-			for c in committers.split("\n"):
+			for c in committers.strip().split("\n"):
 				uniq.add(c)
 			numUniqueCommitters = len(uniq)
 			# this metric may be wrong
@@ -214,8 +217,11 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 			except KeyError:
 				print "key error"
 			(minor, major, ownership) = getOwnershipMetrics(uniq, fileName, v1, v2)
-		except IndexError:
-			#print "index error: ", fileName
+		except IndexError, e:
+			print "index error: ", fileName, e
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]      
+			print(exc_type, fname, exc_tb.tb_lineno)
 			pass
 		# two more metrics: number of general exp developers
 		# and number of specific exp developers
@@ -290,26 +296,30 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 			except KeyError:
 				sys.stderr.write("no such file: "+ fileName+"\n")
 			"""
-		except IndexError:
+		except IndexError, e:
 			print "get bug count index error, no such file: ", fileName
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]      
+			print(exc_type, fname, exc_tb.tb_lineno)
 	return issueKeyInfo#bugdataOld 
 	
 
 def main():
 	root = sys.argv[1]
-	v1 = sys.argv[2]
-	v2 = sys.argv[3]
-	projectName = sys.argv[4]
+	vpre = sys.argv[2]
+	vcur = sys.argv[3]
+	vpost = sys.argv[4]
+	projectName = sys.argv[5]
 
 	absRootDir = os.path.abspath(root)
 	# need to call the following two lines before computing for v2
 	print "getting file info..."
-	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, v1, projectName, v1, v2)
+	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vpre, vcur)
 	print "computing commit metrics..."
-	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, v1, v2)
+	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
 
 	print "getting bug data..."
-	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, v2, projectName, v1, v2)
+	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vpost, projectName, vcur, vpost)
 	# update bugdataOld
 	#bugdataOld = getBugCounts(fileInfoMapV2, bugdataOld, root)
 	issueKeyInfo = getIssueKeyInfo(fileInfoMapV2, root)
@@ -343,7 +353,7 @@ def main():
 			bugdataOld[fileName].append(0)
 
 
-	bugOutputFile = csv.writer(open("../"+v1+"-"+projectName+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
+	bugOutputFile = csv.writer(open("../"+vcur+"-"+projectName+'.csv', 'wb'), delimiter=';',	quotechar='|', quoting=csv.QUOTE_MINIMAL)
 	bugOutputFile.writerow(["fileName", "project", "LOC", "numCommits",
 		"numInsertions", "numDeletions", "numUniqueCommitters", "fileExp", "minor", "major", "ownership", "numGeneralExp", "feature",	"improvement", "test", "bugs", "blocker", "critical", "major", "minor", "trivial"])
 	for k,v in bugdataOld.items():
