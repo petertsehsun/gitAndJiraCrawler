@@ -193,6 +193,7 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 		major = 0
 		ownership = 0
 		numGeneralExpAuthor = 0
+		totalFileExp = 0
 		try:
 			# get num of commits
 			numCommits = len(fileInfo[MESSAGE])
@@ -203,7 +204,6 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 			for c in committers.split("\n"):
 				uniq.add(c)
 			numUniqueCommitters = len(uniq)
-			totalFileExp = 0
 			# this metric may be wrong
 			try:
 				for author in uniq:
