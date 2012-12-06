@@ -123,8 +123,9 @@ def getOwnershipMetrics(authors, fileName, v1, v2):
 			ownership = ownerPercent
 	return (minor, major, ownership)
 
-def getAuthorGeneralExp(authorName):
-	exp = subprocess.Popen("git log " +v1+"..."+v2+ " --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
+def getAuthorGeneralExp(authorName, v1, v2):
+	#exp = subprocess.Popen("git log " +v1+"..."+v2+ " --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
+	exp = subprocess.Popen("git log --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
 	insert = re.findall('[0-9]+\sinsertions', exp)
 	delete = re.findall('[0-9]+\sdeletions', exp)
 
@@ -178,7 +179,7 @@ def allAuthorExp(v1, v2):
 		uniq.add(c)
 	authorExp = {}
 	for author in uniq:
-		authorExp[author] = getAuthorGeneralExp(author)
+		authorExp[author] = getAuthorGeneralExp(author, v1, v2)
 	return authorExp
 
 def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
@@ -212,7 +213,7 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 							numGeneralExpAuthor = numGeneralExpAuthor + 1
 			except KeyError:
 				print "key error"
-			(minor, major, ownership) = getOwnershipMetrics(uniq, fileName)
+			(minor, major, ownership) = getOwnershipMetrics(uniq, fileName, v1, v2)
 		except IndexError:
 			#print "index error: ", fileName
 			pass
