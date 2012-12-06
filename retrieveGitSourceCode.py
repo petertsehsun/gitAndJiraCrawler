@@ -311,6 +311,12 @@ def main():
 	vpost = sys.argv[4]
 	projectName = sys.argv[5]
 
+	# need to double check git tagv1...tagv2
+	# how does since and until work
+	# should be vcur, vpost, vpostpost to get commits from
+	# v1.4 to v1.5, and get the commits from v1.5 to v1.6
+	# if we are interested in data in v1.4
+
 	absRootDir = os.path.abspath(root)
 	# need to call the following two lines before computing for v2
 	print "getting file info..."
