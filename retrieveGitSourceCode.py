@@ -207,7 +207,6 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 			for c in committers.strip().split("\n"):
 				if c != "":
 					uniq.add(c)
-			print uniq
 			numUniqueCommitters = len(uniq)
 			# this metric may be wrong
 			try:
