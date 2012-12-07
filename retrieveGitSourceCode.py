@@ -325,7 +325,7 @@ def main():
 	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
 
 	print "getting bug data..."
-	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vpost, projectName, vcur, vpost)
+	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vcur, projectName, vcur, vpost)
 	# update bugdataOld
 	#bugdataOld = getBugCounts(fileInfoMapV2, bugdataOld, root)
 	issueKeyInfo = getIssueKeyInfo(fileInfoMapV2, root)
