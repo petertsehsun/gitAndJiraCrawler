@@ -89,11 +89,11 @@ def iterateAllCommitLogs(logs, fileInfoMap):
 def iterateVersion(absRootDir, rootDir, tag, projectName, v1, v2):
 	os.chdir(os.path.abspath(absRootDir))
 	print os.getcwd(), " cur dir"
-	subprocess.call("git checkout "+tag, shell=True)
+	#subprocess.call("git checkout "+tag, shell=True)
 
 	# create a directory that store the files in that particular tag
-	subprocess.call("mkdir ../" + tag+"-"+projectName, shell=True)
-	copySourceFiles(".", "../"+tag+"-"+projectName)
+	#subprocess.call("mkdir ../" + tag+"-"+projectName, shell=True)
+	#copySourceFiles(".", "../"+tag+"-"+projectName)
 	# since we change cwd, we need to go one directory above
 	# then we get the file names, package names,and LOC
 	(bugdata, fileInfoMap) = getFileInfo("../"+rootDir)
@@ -306,9 +306,9 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 
 def main():
 	root = sys.argv[1]
-	vcur = sys.argv[2]
-	vpost = sys.argv[3]
-	vpostpost = sys.argv[4]
+	vpre = sys.argv[2]
+	vcur = sys.argv[3]
+	vpost = sys.argv[4]
 	projectName = sys.argv[5]
 
 	# need to double check git tagv1...tagv2
@@ -320,12 +320,12 @@ def main():
 	absRootDir = os.path.abspath(root)
 	# need to call the following two lines before computing for v2
 	print "getting file info..."
-	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vcur, vpost)
+	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vpre, vcur)
 	print "computing commit metrics..."
-	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vcur, vpost)
+	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
 
 	print "getting bug data..."
-	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vpost, projectName, vpost, vpostpost)
+	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vpost, projectName, vcur, vpost)
 	# update bugdataOld
 	#bugdataOld = getBugCounts(fileInfoMapV2, bugdataOld, root)
 	issueKeyInfo = getIssueKeyInfo(fileInfoMapV2, root)
