@@ -98,7 +98,7 @@ def iterateVersion(absRootDir, rootDir, tag, projectName, v1, v2):
 	# then we get the file names, package names,and LOC
 	(bugdata, fileInfoMap) = getFileInfo("../"+rootDir)
 
-	command = "git log " +v1+"..."+v2+ " --format=\"%an;;%cn;;%s;;%H\""
+	command = "git log " +v1+".."+v2+ " --format=\"%an;;%cn;;%s;;%H\""
 	logs = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True).communicate()[0]
 	logs = logs.split("\n")
 
@@ -106,13 +106,13 @@ def iterateVersion(absRootDir, rootDir, tag, projectName, v1, v2):
 	return (bugdata, fileInfoMap)
 
 def getOwnershipMetrics(authors, fileName, v1, v2):
-	totalCommits = subprocess.Popen("git log " +v1+"..."+v2+ " --oneline " + fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
+	totalCommits = subprocess.Popen("git log " +v1+".."+v2+ " --oneline " + fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
 	minor = 0
 	major = 0
 	ownership = 0
 	totalCommitLen = len(totalCommits.strip().split("\n"))
 	for author in authors:
-		authorCommits = subprocess.Popen("git log " +v1+"..."+v2+ " --author=\"" + author + "\" --oneline " + fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
+		authorCommits = subprocess.Popen("git log " +v1+".."+v2+ " --author=\"" + author + "\" --oneline " + fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
 		authorCommitLen = len(authorCommits.strip().split("\n"))
 		ownerPercent = float(authorCommitLen)/totalCommitLen 
 		if ownerPercent <= 0.05 and authorCommitLen >= 1:
@@ -124,7 +124,7 @@ def getOwnershipMetrics(authors, fileName, v1, v2):
 	return (minor, major, ownership)
 
 def getAuthorGeneralExp(authorName, v1, v2):
-	#exp = subprocess.Popen("git log " +v1+"..."+v2+ " --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
+	#exp = subprocess.Popen("git log " +v1+".."+v2+ " --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
 	exp = subprocess.Popen("git log --author=\"" + authorName + "\" --oneline --shortstat", stdout=subprocess.PIPE, shell=True).communicate()[0]
 	insert = re.findall('[0-9]+\sinsertions', exp)
 	delete = re.findall('[0-9]+\sdeletions', exp)
@@ -148,7 +148,7 @@ def getAuthorGeneralExp(authorName, v1, v2):
 
 def getCodeChurn(filePath, v1, v2):
 	#commitHist = subprocess.Popen("git log -p --stat " + filePath ,stdout=subprocess.PIPE, shell=True).communicate()[0]
-	commitHist = subprocess.Popen("git log " +v1+"..."+v2+ " --oneline --shortstat " + filePath, stdout=subprocess.PIPE, shell=True).communicate()[0]
+	commitHist = subprocess.Popen("git log " +v1+".."+v2+ " --oneline --shortstat " + filePath, stdout=subprocess.PIPE, shell=True).communicate()[0]
 
 	insert = re.findall('[0-9]+\sinsertions', commitHist)
 	delete = re.findall('[0-9]+\sdeletions', commitHist)
@@ -172,7 +172,7 @@ def getCodeChurn(filePath, v1, v2):
 	return (numInsert, numDelete)
 
 def allAuthorExp(v1, v2):
-	committers = subprocess.Popen("git log " +v1+"..."+v2+ " --pretty=format:\"%an\" ", stdout=subprocess.PIPE, shell=True).communicate()[0]
+	committers = subprocess.Popen("git log " +v1+".."+v2+ " --pretty=format:\"%an\" ", stdout=subprocess.PIPE, shell=True).communicate()[0]
 	
 	uniq = set()
 	for c in committers.split("\n"):
@@ -201,7 +201,7 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 			else:
 				numCommits = 0
 			# get num of unique committers
-			committers = subprocess.Popen("git log " +v1+"..."+v2+ " --pretty=format:\"%an\" " +
+			committers = subprocess.Popen("git log " +v1+".."+v2+ " --pretty=format:\"%an\" " +
 					fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
 			uniq = set()
 			for c in committers.strip().split("\n"):
