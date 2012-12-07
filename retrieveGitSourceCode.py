@@ -205,7 +205,9 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 					fileName, stdout=subprocess.PIPE, shell=True).communicate()[0]
 			uniq = set()
 			for c in committers.strip().split("\n"):
-				uniq.add(c)
+				if c != "":
+					uniq.add(c)
+			print uniq
 			numUniqueCommitters = len(uniq)
 			# this metric may be wrong
 			try:
