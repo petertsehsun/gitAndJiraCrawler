@@ -258,9 +258,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 			numImprovement = 0
 			numTest = 0
 			for msg in fileInfo[MESSAGE]:
-				print msg
 				m = msg[0].replace(':', '-')
-				print m
 				for matchedKey in re.findall(issueKey, m):
 					matchedKey = matchedKey.strip()
 						
