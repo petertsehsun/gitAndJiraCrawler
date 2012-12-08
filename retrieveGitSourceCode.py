@@ -73,6 +73,7 @@ def iterateAllCommitLogs(logs, fileInfoMap):
 					# if this file is in the list of source code files that
 					# we get from the git 
 					if f in fileInfoMap:
+						#print "innnnnn"
 						if len(fileInfoMap[f]) <= MESSAGE:
 							fileInfoMap[f].append([])
 						fileInfoMap[f][MESSAGE].append((message, commitHash))
@@ -89,7 +90,7 @@ def iterateAllCommitLogs(logs, fileInfoMap):
 def iterateVersion(absRootDir, rootDir, tag, projectName, v1, v2):
 	os.chdir(os.path.abspath(absRootDir))
 	print os.getcwd(), " cur dir"
-	#subprocess.call("git checkout "+tag, shell=True)
+	subprocess.call("git checkout "+tag, shell=True)
 
 	# create a directory that store the files in that particular tag
 	#subprocess.call("mkdir ../" + tag+"-"+projectName, shell=True)
