@@ -8,7 +8,7 @@ from numpy import median
 
 javaExtension = re.compile('.*\.java$', re.IGNORECASE)
 cExtension = re.compile('.*\.c[p]$', re.IGNORECASE)
-issueKey = re.compile('\s[a-zA-Z0-9]+\-[0-9]+\s', re.IGNORECASE)
+issueKey = re.compile('[a-zA-Z0-9]+\-[0-9]+', re.IGNORECASE)
 
 # constant for fileInfo
 PACKAGE_NAME = 0
@@ -258,7 +258,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 			numImprovement = 0
 			numTest = 0
 			for msg in fileInfo[MESSAGE]:
-
+				msg[0] = msg[0].replace(':', '-')
 				for matchedKey in re.findall(issueKey, msg[0]):
 					matchedKey = matchedKey.strip()
 						
