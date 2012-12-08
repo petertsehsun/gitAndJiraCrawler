@@ -258,8 +258,10 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 			numImprovement = 0
 			numTest = 0
 			for msg in fileInfo[MESSAGE]:
-				msg[0] = msg[0].replace(':', '-')
-				for matchedKey in re.findall(issueKey, msg[0]):
+				print msg
+				m = msg[0].replace(':', '-')
+				print m
+				for matchedKey in re.findall(issueKey, m):
 					matchedKey = matchedKey.strip()
 						
 					# guery the JIRA repo
