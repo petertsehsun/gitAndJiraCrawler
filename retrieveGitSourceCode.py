@@ -5,6 +5,7 @@ import subprocess
 import csv
 from subprocess import call
 from numpy import median
+from itertools import izip
 import json
 
 javaExtension = re.compile('.*\.java$', re.IGNORECASE)
@@ -348,10 +349,12 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 				for matchedKey in re.findall(issueKey, m):
 					matchedKey = matchedKey.strip()
 					# do not double count issue keys
-					if matchedKey in issueKeys:
+					if matchedKey.upper() in issueKeys:
+						print "double count"
 						continue	
 					# guery the JIRA repo
 					os.chdir("../src/")
+					queryResult = ""
 					queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
 					# is this a bug, improvement, new feature, or test
 					if queryResult.split(";")[1].strip() == "Bug":
@@ -398,17 +401,22 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 	# get all the commits
 	command = 'git rev-list --all  --format="%an;;%cn;;%s;;%H"'
 	allCommits = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True).communicate()[0]	
-	allCommits = allcommits.split('\n')
-	for commitHash, commitInfo in izip(allCommits, allCommits):
+	allCommits = allCommits.split('\n')
+	for i, commitInfo in enumerate(allCommits):
+		if (i+1) % 2 != 0:
+			continue
 		# find the files associated with the commit and update
+		#print commitInfo
 		splittedLog = commitInfo.split(";;")
 		message = splittedLog[MESSAGE].strip()
 		message = message.replace("\"", "")
 		for matchedKey in re.findall(issueKey, message):
-			if matchedKey in issueKeys:
+			if matchedKey.upper() in issueKeys:
 				# first affected version is not the version of interest
-				if issuesKeys[matchedKey][2][0] != _vcur:
+				if str(issueKeys[matchedKey][2][0]).lower() != _vcur.lower():
+					print matchedKey + " not in the right version"
 					continue # skip
+				print "matched key ", issueKeys[matchedKey]
 
 				commitHash = splittedLog[COMMIT_HASH].strip()
 				# show the files that are committed by this commit
@@ -460,12 +468,15 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 						if issueKeys[matchedKey][1] == "Trivial":
 							numMinor = numMinor + 1
 						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+						print f
 					if issueKeys[matchedKey][0] == "New Feature":
 						newFeatureCount = newFeatureCount + 1
 					if issueKeys[matchedKey][0] == "Improvement":
 						numImprovement = numImprovement + 1
 					if issueKeys[matchedKey][0] == "Test":
 						numTest = numTest + 1
+			
 
 					issueKeyInfo[f] = {"bug": bugCount, "feature": newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 	return issueKeyInfo#bugdataOld 
