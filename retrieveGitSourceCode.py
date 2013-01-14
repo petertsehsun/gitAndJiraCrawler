@@ -364,6 +364,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					#################################
 					if matchedKey in alreadyMatched:
 						queryResult = alreadyMatched[matchedKey]
+						print "previously found"
 					#################################
 					# is this a bug, improvement, new feature, or test
 					if queryResult.split(";")[1].strip() == "Bug":
