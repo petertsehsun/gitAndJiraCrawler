@@ -351,6 +351,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 				m = msg[0].replace(':', '-')
 				for matchedKey in re.findall(issueKey, m):
 					matchedKey = matchedKey.strip()
+					matchedKey = matchedKey.upper()
 					# do not double count issue keys
 					if matchedKey.upper() in issueKeys:
 						print "double count"
