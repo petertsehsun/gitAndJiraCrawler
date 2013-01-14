@@ -364,7 +364,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					#################################
 					if matchedKey in alreadyMatched:
 						queryResult = alreadyMatched[matchedKey]
-						print "previously found"
+						#print "previously found"
 					#################################
 					# is this a bug, improvement, new feature, or test
 					if queryResult.split(";")[1].strip() == "Bug":
@@ -387,7 +387,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 						numImprovement = numImprovement + 1
 					if queryResult.split(";")[1].strip() == "Test":
 						numTest = numTest + 1
-					print matchedKey
+					#print matchedKey
 					print queryResult
 			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
 					newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
