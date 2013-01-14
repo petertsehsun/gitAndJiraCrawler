@@ -420,7 +420,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 		message = splittedLog[MESSAGE].strip()
 		message = message.replace("\"", "")
 		for matchedKey in re.findall(issueKey, message):
-			if matchedKey.upper() in issueKeys:
+			matchedKey = matchedKey.upper()
+			if matchedKey in issueKeys:
 				# first affected version is not the version of interest
 				if str(issueKeys[matchedKey][2][0]).lower() != _vcur.lower():
 					print matchedKey + " not in the right version"
