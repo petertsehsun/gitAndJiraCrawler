@@ -344,6 +344,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 			newFeatureCount = 0
 			numImprovement = 0
 			numTest = 0
+			# avoid sending request to JIRA all the time
+			alreadyMatched = {}
 			for msg in fileInfo[MESSAGE]:
 				m = msg[0].replace(':', '-')
 				for matchedKey in re.findall(issueKey, m):
@@ -352,10 +354,17 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					if matchedKey.upper() in issueKeys:
 						print "double count"
 						continue	
-					# guery the JIRA repo
-					os.chdir("../src/")
-					queryResult = ""
-					queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
+					#################################
+					if matchedKey not in alreadyMatched:
+						# guery the JIRA repo
+						os.chdir("../src/")
+						queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
+						alreadyMatched[matchedKey] = queryResult
+						os.chdir("../"+rootDir)
+					#################################
+					if matchedKey in alreadyMatched:
+						queryResult = alreadyMatched[matchedKey]
+					#################################
 					# is this a bug, improvement, new feature, or test
 					if queryResult.split(";")[1].strip() == "Bug":
 						bugCount = bugCount + 1
@@ -377,7 +386,6 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 						numImprovement = numImprovement + 1
 					if queryResult.split(";")[1].strip() == "Test":
 						numTest = numTest + 1
-					os.chdir("../"+rootDir)
 					print matchedKey
 					print queryResult
 			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
