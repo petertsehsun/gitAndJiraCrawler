@@ -23,7 +23,8 @@ def getAllIssues(affectedVersion, project):
 	query =	'curl -d- -X GET -H "Content-Type: application/json" https://issues.apache.org/jira/rest/api/latest/search?jql=project='+ project + '%20AND%20affectedVersion=\\"'+affectedVersion+'\\"'	
 	query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
 	json_data = json.loads(query_result)
-
+	if 'issues' not in json_data:
+		return
 	for issue in json_data['issues']:
 		affected_versions = []
 		for v in issue['fields']['versions']:
