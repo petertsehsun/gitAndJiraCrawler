@@ -33,7 +33,7 @@ def getAllIssues(affectedVersion, project):
 	if 'issues' not in json_data:
 		return
 	for issue in json_data['issues']:
-		affectedVersion = getAffectedVersion(issue)
+		affected_version = getAffectedVersion(issue)
 		issueKeys[issue['key']] = [issue['fields']['issuetype']['name'], issue['fields']['priority']['name'], affected_versions]
 
 
