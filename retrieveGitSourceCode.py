@@ -310,7 +310,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
 					#key; type; resolution; priority; affectedVersions
 					json_data = json.loads(query_result)
-					affectedVersion = json_data['fields']['versions'].sort()
+					affectedVersion = json_data['fields']['versions']
 					if affectedVersion == None:
 						affectedVersion = "None"
 						print "affected version is none " + json_data['key']
@@ -457,7 +457,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 
 	
 	fromLog = open('keysFromLog', 'w+')
-	for e in keysFromLog:
+	for e in keysFromLogs:
 		fromLog.write(e)
 	fromJira = open('keysFromJira', 'w+')
 	for e in keysFromJira:
