@@ -313,7 +313,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					affectedVersion = json_data['fields']['versions'].sort()
 					if affectedVersion == None:
 						affectedVersion = "None"
-						print "affected version is none " + query_result
+						print "affected version is none " + json_data['key']
 					else:
 						affectedVersion = str(getAffectedVersion(json_data)[0])
 
@@ -321,7 +321,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 
 					queryResult = str(json_data['key']) + ";" + str(json_data['fields']['issuetype']['name']) + ";" + str(json_data['fields']['resolution']['name']) + ";" + str(json_data['fields']['priority']['name']) + ";"
 					######### affected version is not true #########
-					if affectedVersion != _curv:
+					if affectedVersion != _vcur:
 						continue
 					#https://issues.apache.org/jira/rest/api/latest/issue/AXIS2-5470
 					#################################
