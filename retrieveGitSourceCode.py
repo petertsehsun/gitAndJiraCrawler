@@ -462,7 +462,9 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 	fromJira = open('keysFromJira', 'w')
 	for e in keysFromJira:
 		fromJira.write(e+'\n')
+	fromLog.flush()
 	fromLog.close()
+	fromJira.flush()
 	fromJira.close()
 	return issueKeyInfo#bugdataOld 
 	
