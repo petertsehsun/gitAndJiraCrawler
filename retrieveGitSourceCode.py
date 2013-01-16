@@ -457,8 +457,10 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 
 	
 	fromLog = open('keysFromLog', 'w')
+	fuck = ""
 	for e in keysFromLogs:
-		fromLog.write(e+'\n')
+		fuck = fuck + e + '\n'
+	fromLog.write(fuck)
 	fromJira = open('keysFromJira', 'w')
 	for e in keysFromJira:
 		fromJira.write(e+'\n')
