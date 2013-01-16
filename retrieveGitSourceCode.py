@@ -19,6 +19,13 @@ LOC = 1
 MESSAGE = 2
 COMMIT_HASH = 3
 
+def getAffectedVersion(issue):
+	affected_versions = []
+	for v in issue['fields']['versions']:
+		affected_versions.append(v['name'])
+	affected_versions.sort()
+	return affected_versions
+
 def getAllIssues(affectedVersion, project):
 	query =	'curl -d- -X GET -H "Content-Type: application/json" https://issues.apache.org/jira/rest/api/latest/search?jql=project='+ project + '%20AND%20affectedVersion=\\"'+affectedVersion+'\\"'	
 	query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
@@ -26,11 +33,9 @@ def getAllIssues(affectedVersion, project):
 	if 'issues' not in json_data:
 		return
 	for issue in json_data['issues']:
-		affected_versions = []
-		for v in issue['fields']['versions']:
-			affected_versions.append(v['name'])
-		affected_versions.sort()
+		affectedVersion = getAffectedVersion(issue)
 		issueKeys[issue['key']] = [issue['fields']['issuetype']['name'], issue['fields']['priority']['name'], affected_versions]
+
 
 
 def getFileInfo(rootDir):
@@ -256,74 +261,6 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 		#print numCommits, numInsert, numDelete, numUniqueCommitters, totalFileExp, minor, major, ownership, numGeneralExpAuthor
 	return bugdataOld
 	
-def getIssueKeyInfo(fileInfoMap, rootDir):
-	issueKeyInfo = {}
-	# iterate through every file
-	for fileName, fileInfo in fileInfoMap.items():
-		# for each commit message that the file has
-		try:
-			# bug types
-			bugCount = 0
-			numBlocker = 0
-			numCritical = 0
-			numMajor = 0
-			numMinor = 0
-			numTrivial = 0
-			#
-			newFeatureCount = 0
-			numImprovement = 0
-			numTest = 0
-			for msg in fileInfo[MESSAGE]:
-				m = msg[0].replace(':', '-')
-				for matchedKey in re.findall(issueKey, m):
-					matchedKey = matchedKey.strip()
-					# do not double count issue keys
-					if matchedKey in issueKeys:
-						continue	
-					# guery the JIRA repo
-					os.chdir("../src/")
-					queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
-					# is this a bug, improvement, new feature, or test
-					if queryResult.split(";")[1].strip() == "Bug":
-						bugCount = bugCount + 1
-						# is a bug, what is the priority
-						if queryResult.split(";")[3].strip() == "Blocker":
-							numBlocker = numBlocker + 1
-						if queryResult.split(";")[3].strip() == "Critical":
-							numCritical = numCritical + 1
-						if queryResult.split(";")[3].strip() == "Major":
-							numMajor = numMajor + 1
-						if queryResult.split(";")[3].strip() == "Minor":
-							numMinor = numMinor + 1
-						if queryResult.split(";")[3].strip() == "Trivial":
-							numMinor = numMinor + 1
-						#print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-					if queryResult.split(";")[1].strip() == "New Feature":
-						newFeatureCount = newFeatureCount + 1
-					if queryResult.split(";")[1].strip() == "Improvement":
-						numImprovement = numImprovement + 1
-					if queryResult.split(";")[1].strip() == "Test":
-						numTest = numTest + 1
-					os.chdir("../"+rootDir)
-					#print matchedKey
-					#print queryResult
-			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
-					newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
-			"""
-			try:
-				# make sure this is not the first version
-				bugdataOld[fileName].append(bugCount)
-			except KeyError:
-				sys.stderr.write("no such file: "+ fileName+"\n")
-			"""
-		except IndexError, e:
-			#print "get bug count index error, no such file: ", fileName
-			#exc_type, exc_obj, exc_tb = sys.exc_info()
-			#fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]      
-			#print(exc_type, fname, exc_tb.tb_lineno)
-			pass
-	return issueKeyInfo#bugdataOld 
-
 def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 	issueKeyInfo = {}
 
@@ -373,16 +310,16 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
 					#key; type; resolution; priority; affectedVersions
 					json_data = json.loads(query_result)
-					queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution']['name'] + ";" + json_data['fields']['priority']['name'] + ";"
 					affectedVersion = json_data['fields']['versions'].sort()
 					if affectedVersion == None:
 						affectedVersion = "None"
 						print "affected version is none " + queryResult
 					else:
-						affectedVersion = affectedVersion[0]
+						affectedVersion = str(getAffectedVersion(json_data)[0])
 
-					queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";" + affectedVersion
+					#queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";" + affectedVersion
 
+					queryResult = str(json_data['key']) + ";" + str(json_data['fields']['issuetype']['name']) + ";" + str(json_data['fields']['resolution']['name']) + ";" + str(json_data['fields']['priority']['name']) + ";"
 					######### affected version is not true #########
 					if affectedVersion != _curv:
 						continue
