@@ -313,7 +313,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					affectedVersion = json_data['fields']['versions'].sort()
 					if affectedVersion == None:
 						affectedVersion = "None"
-						print "affected version is none " + queryResult
+						print "affected version is none " + query_result
 					else:
 						affectedVersion = str(getAffectedVersion(json_data)[0])
 
@@ -456,8 +456,12 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					issueKeyInfo[f] = {"bug": bugCount, "feature": newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 
 	
-	open('keysFromLog', 'w+').write(str(keysFromLog))
-	open('keysFromJira', 'w+').write(str(keysFromJira))
+	fromLog = open('keysFromLog', 'w+')
+	for e in keysFromLog:
+		fromLog.write(e)
+	fromJira = open('keysFromJira', 'w+')
+	for e in keysFromJira:
+		fromJira.write(e)
 	return issueKeyInfo#bugdataOld 
 	
 
