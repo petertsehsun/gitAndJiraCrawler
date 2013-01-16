@@ -105,7 +105,7 @@ def iterateAllCommitLogs(logs, fileInfoMap):
 
 def iterateVersion(absRootDir, rootDir, tag, projectName, v1, v2):
 	os.chdir(os.path.abspath(absRootDir))
-	print os.getcwd(), " cur dir"
+	#print os.getcwd(), " cur dir"
 	subprocess.call("git checkout "+tag, shell=True)
 
 	# create a directory that store the files in that particular tag
@@ -253,7 +253,7 @@ def computeCommitMetrics(bugdataOld, fileInfoMap, v1, v2):
 		bugdataOld[fileName].append(major)
 		bugdataOld[fileName].append(ownership)
 		bugdataOld[fileName].append(numGeneralExpAuthor)
-		print numCommits, numInsert, numDelete, numUniqueCommitters, totalFileExp, minor, major, ownership, numGeneralExpAuthor
+		#print numCommits, numInsert, numDelete, numUniqueCommitters, totalFileExp, minor, major, ownership, numGeneralExpAuthor
 	return bugdataOld
 	
 def getIssueKeyInfo(fileInfoMap, rootDir):
@@ -297,7 +297,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 							numMinor = numMinor + 1
 						if queryResult.split(";")[3].strip() == "Trivial":
 							numMinor = numMinor + 1
-						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						#print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 					if queryResult.split(";")[1].strip() == "New Feature":
 						newFeatureCount = newFeatureCount + 1
 					if queryResult.split(";")[1].strip() == "Improvement":
@@ -305,8 +305,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 					if queryResult.split(";")[1].strip() == "Test":
 						numTest = numTest + 1
 					os.chdir("../"+rootDir)
-					print matchedKey
-					print queryResult
+					#print matchedKey
+					#print queryResult
 			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
 					newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 			"""
@@ -327,6 +327,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir):
 def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 	issueKeyInfo = {}
 
+	keysFromJira = set()
+	keysFromLogs = set()
 	
 	getAllIssues(_vcur, projectName) # must be called before issueKeyInfo
 	
@@ -354,15 +356,37 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					matchedKey = matchedKey.upper()
 					# do not double count issue keys
 					if matchedKey.upper() in issueKeys:
-						print "double count"
+						#print "double count"
 						continue	
+					keysFromLogs.add(matchedKey)
 					#################################
 					if matchedKey not in alreadyMatched:
 						# guery the JIRA repo
+						"""
 						os.chdir("../src/")
 						queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
 						alreadyMatched[matchedKey] = queryResult
 						os.chdir("../"+rootDir)
+						"""
+	
+					query =	'curl -d- -X GET -H "Content-Type: application/json" https://issues.apache.org/jira/rest/api/latest/issue/'+matchedKey
+					query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
+					#key; type; resolution; priority; affectedVersions
+					json_data = json.loads(query_result)
+					queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";"
+					affectedVersion = json_data['fields']['versions'].sort()
+					if affectedVersion == None:
+						affectedVersion = "None"
+						print "affected version is none " + queryResult
+					else:
+						affectedVersion = affectedVersion[0]
+
+					queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";" + affectedVersion
+
+					######### affected version is not true #########
+					if affectedVersion != _curv:
+						continue
+					#https://issues.apache.org/jira/rest/api/latest/issue/AXIS2-5470
 					#################################
 					if matchedKey in alreadyMatched:
 						queryResult = alreadyMatched[matchedKey]
@@ -382,7 +406,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 							numMinor = numMinor + 1
 						if queryResult.split(";")[3].strip() == "Trivial":
 							numMinor = numMinor + 1
-						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						#print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 					if queryResult.split(";")[1].strip() == "New Feature":
 						newFeatureCount = newFeatureCount + 1
 					if queryResult.split(";")[1].strip() == "Improvement":
@@ -390,7 +414,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					if queryResult.split(";")[1].strip() == "Test":
 						numTest = numTest + 1
 					#print matchedKey
-					print queryResult
+					#print queryResult
 			issueKeyInfo[fileName] = {"bug": bugCount, "feature":
 					newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 			"""
@@ -423,12 +447,14 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 		message = message.replace("\"", "")
 		for matchedKey in re.findall(issueKey, message):
 			matchedKey = matchedKey.upper()
+			matchedKey = matchedKey.strip()
 			if matchedKey in issueKeys:
 				# first affected version is not the version of interest
 				if str(issueKeys[matchedKey][2][0]).lower() != _vcur.lower():
-					print matchedKey + " not in the right version"
+					#print matchedKey + " not in the right version"
 					continue # skip
-				print "matched key ", issueKeys[matchedKey]
+				#print "matched key ", issueKeys[matchedKey]
+				keysFromJira.add(matchedKey)
 
 				commitHash = splittedLog[COMMIT_HASH].strip()
 				# show the files that are committed by this commit
@@ -479,9 +505,9 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 							numMinor = numMinor + 1
 						if issueKeys[matchedKey][1] == "Trivial":
 							numMinor = numMinor + 1
-						print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						#print "bug found!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
-						print f
+						#print f
 					if issueKeys[matchedKey][0] == "New Feature":
 						newFeatureCount = newFeatureCount + 1
 					if issueKeys[matchedKey][0] == "Improvement":
@@ -491,6 +517,10 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 			
 
 					issueKeyInfo[f] = {"bug": bugCount, "feature": newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
+
+	
+	open('keysFromLog', 'w+').write(str(keysFromLog))
+	open('keysFromJira', 'w+').write(str(keysFromJira))
 	return issueKeyInfo#bugdataOld 
 	
 
@@ -510,14 +540,14 @@ def main():
 
 	absRootDir = os.path.abspath(root)
 	# need to call the following two lines before computing for v2
-	print "getting file info..."
+	#print "getting file info..."
 	# bugdataOld contains: file path, package, and file size
 	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vpre, vcur)
-	print "computing commit metrics..."
+	#print "computing commit metrics..."
 	# add metrics to bugdataOld
 	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
 
-	print "getting bug data..."
+	#print "getting bug data..."
 	# bugdataNew is for next version of does not need metrics
 	# it is only used for finding commit logs (which is done using fileInfoMapV2)
 	bugdataNew, fileInfoMapV2 = iterateVersion(absRootDir, root, vcur, projectName, vcur, vpost)
