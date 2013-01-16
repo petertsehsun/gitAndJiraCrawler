@@ -373,7 +373,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
 					#key; type; resolution; priority; affectedVersions
 					json_data = json.loads(query_result)
-					queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";"
+					queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution']['name'] + ";" + json_data['fields']['priority']['name'] + ";"
 					affectedVersion = json_data['fields']['versions'].sort()
 					if affectedVersion == None:
 						affectedVersion = "None"
