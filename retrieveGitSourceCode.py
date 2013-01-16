@@ -456,12 +456,12 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					issueKeyInfo[f] = {"bug": bugCount, "feature": newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 
 	
-	fromLog = open('keysFromLog', 'w+')
+	fromLog = open('keysFromLog', 'w')
 	for e in keysFromLogs:
-		fromLog.write(e)
-	fromJira = open('keysFromJira', 'w+')
+		fromLog.write(e+'\n')
+	fromJira = open('keysFromJira', 'w')
 	for e in keysFromJira:
-		fromJira.write(e)
+		fromJira.write(e+'\n')
 	return issueKeyInfo#bugdataOld 
 	
 
