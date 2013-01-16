@@ -462,6 +462,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 	fromJira = open('keysFromJira', 'w')
 	for e in keysFromJira:
 		fromJira.write(e+'\n')
+	fromLog.close()
+	fromJira.close()
 	return issueKeyInfo#bugdataOld 
 	
 
@@ -486,7 +488,7 @@ def main():
 	bugdataOld, fileInfoMapV1 = iterateVersion(absRootDir, root, vcur, projectName, vpre, vcur)
 	#print "computing commit metrics..."
 	# add metrics to bugdataOld
-	bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
+	#bugdataOld = computeCommitMetrics(bugdataOld, fileInfoMapV1, vpre, vcur)
 
 	#print "getting bug data..."
 	# bugdataNew is for next version of does not need metrics
