@@ -7,6 +7,7 @@ from subprocess import call
 from numpy import median
 from itertools import izip
 import json
+from __future__ import print_function
 
 javaExtension = re.compile('.*\.java$', re.IGNORECASE)
 cExtension = re.compile('.*\.c[p]$', re.IGNORECASE)
@@ -456,11 +457,12 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					issueKeyInfo[f] = {"bug": bugCount, "feature": newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 
 	
-	fromLog = open("keysFromLog.txt", 'wb')
-	fromLog.write("Haha\n");
-	print "haha\n";
+	#fromLog = open("keysFromLog.txt", 'w')
+	flogs = "" 
 	for e in keysFromLogs:
-		fromLog.write(str(e)+'\n')
+		#fromLog.write(str(e)+'\n')
+		flogs = flogs + str(e) + '\n'
+	print(flogs, "keysFromLog.txt")
 	fromJira = open("keysFromJira.txt", 'wb')
 	for e in keysFromJira:
 		fromJira.write(str(e)+'\n')
