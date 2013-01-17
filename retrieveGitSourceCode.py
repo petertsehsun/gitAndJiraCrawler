@@ -7,7 +7,6 @@ from subprocess import call
 from numpy import median
 from itertools import izip
 import json
-from __future__ import print_function
 
 javaExtension = re.compile('.*\.java$', re.IGNORECASE)
 cExtension = re.compile('.*\.c[p]$', re.IGNORECASE)
@@ -267,6 +266,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 
 	keysFromJira = set()
 	keysFromLogs = set()
+	alreadyInIssueKey = set()
+	keysFromLogsNoAffectedVersion = set()
 	
 	getAllIssues(_vcur, projectName) # must be called before issueKeyInfo
 	
@@ -293,41 +294,41 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					matchedKey = matchedKey.strip()
 					matchedKey = matchedKey.upper()
 					# do not double count issue keys
-					if matchedKey.upper() in issueKeys:
+					if matchedKey in issueKeys:
 						#print "double count"
+						alreadyInIssueKey.add(matchedKey)
 						continue	
-					keysFromLogs.add(matchedKey)
 					#################################
 					if matchedKey not in alreadyMatched:
 						# guery the JIRA repo
-						"""
-						os.chdir("../src/")
-						queryResult = subprocess.Popen("java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main " + matchedKey, stdout=subprocess.PIPE, shell=True).communicate()[0]	
-						alreadyMatched[matchedKey] = queryResult
-						os.chdir("../"+rootDir)
-						"""
-	
-					query =	'curl -s -d- -X GET -H "Content-Type: application/json" https://issues.apache.org/jira/rest/api/latest/issue/'+matchedKey
-					query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
-					#key; type; resolution; priority; affectedVersions
-					json_data = json.loads(query_result)
-					affectedVersion = json_data['fields']['versions']
-					if affectedVersion == None:
-						affectedVersion = "None"
-						print "affected version is none " + json_data['key']
-					else:
-						affectedVersion = str(getAffectedVersion(json_data)[0])
+						query =	'curl -s -d- -X GET -H "Content-Type: application/json" https://issues.apache.org/jira/rest/api/latest/issue/'+matchedKey
+						query_result = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
+						#key; type; resolution; priority; affectedVersions
+						json_data = json.loads(query_result)
+						affectedVersion = json_data['fields']['versions']
+						if affectedVersion == None:
+							affectedVersion = "None"
+							keysFromLogsNoAffectedVersion.add(json_data['key'])
+							#print "affected version is none " + json_data['key']
+						else:
+							affectedVersion = str(getAffectedVersion(json_data)[0])
 
 					#queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";" + affectedVersion
 
-					queryResult = str(json_data['key']) + ";" + str(json_data['fields']['issuetype']['name']) + ";" + str(json_data['fields']['resolution']['name']) + ";" + str(json_data['fields']['priority']['name']) + ";"
-					######### affected version is not true #########
-					if affectedVersion != _vcur:
-						continue
+						queryResult = str(json_data['key']) + ";" + str(json_data['fields']['issuetype']['name']) + ";" + str(json_data['fields']['resolution']['name']) + ";" + str(json_data['fields']['priority']['name']) + ";"
+						alreadyMatched[matchedKey] = queryResult
+					
 					#https://issues.apache.org/jira/rest/api/latest/issue/AXIS2-5470
-					#################################
 					if matchedKey in alreadyMatched:
 						queryResult = alreadyMatched[matchedKey]
+					#################################
+
+
+
+					######### affected version is not true #########
+					if affectedVersion != _vcur:
+						keysFromLogs.add((matchedKey, affectedVersion))
+						continue
 						#print "previously found"
 					#################################
 					# is this a bug, improvement, new feature, or test
@@ -392,7 +393,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					#print matchedKey + " not in the right version"
 					continue # skip
 				#print "matched key ", issueKeys[matchedKey]
-				keysFromJira.add(matchedKey)
+				keysFromJira.add((matchedKey, issueKeys[matchedKey][2][0]))
 
 				commitHash = splittedLog[COMMIT_HASH].strip()
 				# show the files that are committed by this commit
@@ -456,20 +457,40 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 
 					issueKeyInfo[f] = {"bug": bugCount, "feature": newFeatureCount, "improvement": numImprovement, "test" : numTest, "blocker": numBlocker, "critical": numCritical, "major": numMajor, "minor": numMinor, "trivial": numTrivial}
 
-	
-	#fromLog = open("keysFromLog.txt", 'w')
-	flogs = "" 
+	res = []
 	for e in keysFromLogs:
-		#fromLog.write(str(e)+'\n')
-		flogs = flogs + str(e) + '\n'
-	print(flogs, "keysFromLog.txt")
-	fromJira = open("keysFromJira.txt", 'wb')
+		res.append(str(e))
+	print "keys from logs that have affected version"
+	res.sort()
+	print res	
+	
+	res = []
 	for e in keysFromJira:
-		fromJira.write(str(e)+'\n')
-	fromLog.flush()
-	fromLog.close()
-	fromJira.flush()
-	fromJira.close()
+		res.append(str(e))
+	print
+	print "keys from Jira"
+	res.sort()
+	print res
+
+	res = []
+	for e in alreadyInIssueKey:
+		res.append(str(e))
+	print
+	print "overlaps"
+	res.sort()
+	print res
+
+	res = []
+	for e in keysFromLogsNoAffectedVersion:
+		res.append(str(e))
+	print
+	print "no affected version"
+	res.sort()
+	print res
+
+
+
+
 	return issueKeyInfo#bugdataOld 
 	
 
