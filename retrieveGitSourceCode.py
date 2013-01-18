@@ -308,11 +308,8 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 						try:
 							affectedVersion = json_data['fields']['versions']
 						except KeyError:
-							print matchedKey
-							print query_result
-							#print json_data['key']
-							affectedVersion = "None"
-							#keysFromLogsNoAffectedVersion.add(json_data['key'])
+							# no such issue key
+							continue
 						if affectedVersion == None:
 							affectedVersion = "None"
 							keysFromLogsNoAffectedVersion.add(json_data['key'])
