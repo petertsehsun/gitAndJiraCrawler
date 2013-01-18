@@ -320,7 +320,7 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 					#queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";" + affectedVersion
 
 						try:
-							if json_data['fields']['resoluton'] == None:
+							if json_data['fields']['resolution'] == None:
 								resolution = "None"
 							else:
 								resolution = json_data['fields']['resolution']['name']
