@@ -319,7 +319,12 @@ def getIssueKeyInfo(fileInfoMap, rootDir, _vcur, projectName):
 
 					#queryResult = json_data['key'] + ";" + json_data['fields']['issuetype']['name'] + ";" + json_data['fields']['resolution'] + ";" + json_data['fields']['priority']['name'] + ";" + affectedVersion
 
-						queryResult = str(json_data['key']) + ";" + str(json_data['fields']['issuetype']['name']) + ";" + str(json_data['fields']['resolution']['name']) + ";" + str(json_data['fields']['priority']['name']) + ";"
+						try:
+							queryResult = str(json_data['key']) + ";" + str(json_data['fields']['issuetype']['name']) + ";" + str(json_data['fields']['resolution']['name']) + ";" + str(json_data['fields']['priority']['name']) + ";"
+						except TypeError as e:
+							print matchedKey
+							print query_result
+							print e
 						alreadyMatched[matchedKey] = queryResult
 					
 					#https://issues.apache.org/jira/rest/api/latest/issue/AXIS2-5470
