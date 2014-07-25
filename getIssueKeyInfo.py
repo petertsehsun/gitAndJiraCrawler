@@ -1,3 +1,9 @@
+"""
+This file crawl all the JIRA issues of the specified project in apache,
+and recored the issue's key, created date, updated date, resolved date, 
+resolution, affected versions, and fixversions.
+"""
+
 import sys
 import re
 import json
@@ -5,9 +11,6 @@ import subprocess
 import csv
 from subprocess import call
 
-javaExtension = re.compile('.*\.java$', re.IGNORECASE)
-cExtension = re.compile('.*\.c[p]$', re.IGNORECASE)
-issueKey = re.compile('[a-zA-Z0-9]+\-[0-9]+', re.IGNORECASE)
 issueKeys = {}
 
 def getAffectedVersion(issue):
@@ -40,24 +43,20 @@ def getFixVersion(issue):
 
 def getAllIssues(project):
     project = project.upper()
+    # magic number is for going through all issues
     for i in range(1, 210):
-        #print i
         query = 'curl -s -d- -X GET -H "Content-Type: application/json" https://issues.apache.org/jira/rest/api/latest/search?jql=project='+project+'%20AND%20type=bug%20AND%20key\>='+project+'-'+str(i*100-99)+'%20AND%20key\<'+project+'-'+str(i*100)+"\&maxResults=100"
-        #print query
         queryResult = subprocess.Popen(query, stdout=subprocess.PIPE, shell=True).communicate()[0]
-        #print query_result
         try: 
             jsonData = json.loads(queryResult)
         except ValueError:
-
+            # exception occur: end of issues, print out result (redirect to a file)
 	    sys.stderr.write(str(queryResult)+"\n")
-            print ";".join(["key", "createddate", "updateddate", "resolveddate", "resolution", "affectedversions", "fixversions"])
+            print ";".join(["key", "createddate", "updateddate", "resolveddate", "resolution", "affectedversions", "fixversions", "assignedDate"])
             for key, val in issueKeys.items():
                 val = [str(v) for v in val]
                 print ";".join([key] + val)
             return
-
-
 
         if 'issues' not in jsonData:
 	    #print jsonData
@@ -75,20 +74,28 @@ def getAllIssues(project):
             affectedVersions = getAffectedVersion(issue)
             fixedVersions = getFixVersion(issue)
             fields = issue['fields']
-            createdDate = fields['created'].replace('.000+0000', '')
-            updatedDate = fields['updated'].replace('.000+0000', '')
+            createdDate = fields['created']#.replace('.000+0000', '')
+            updatedDate = fields['updated']#.replace('.000+0000', '')
             if fields['resolution'] == None:
                 resolution = "None"
                 resolvedDate = "None"
             else:
                 resolution = fields['resolution']['name']
                 resolvedDate = fields['resolutiondate'].replace('.000+0000', '')
-            issueKeys[issue['key']] = [createdDate, updatedDate, resolvedDate, resolution, affectedVersions, fixedVersions]
+            changelog = issue['changelog']['histories']
+
+            assignedDate = "None"
+            for log in changelog:
+                # the bug is assigned
+                if log['items']['field'] == "assignee":
+                    assignedDate = log['items']['created']
+            
+            issueKeys[issue['key']] = [createdDate, updatedDate, resolvedDate, resolution, affectedVersions, fixedVersions, assignedDate]
             #print issueKeys[issue['key']]
 
     #w = csv.writer(open("output.csv", "w"))
     #w.writerow(["key", "createdDate", "updatedDate", "resolvedDate", "resolution", "affectedVersions", "fixVersions"])
-    print ";".join(["key", "createddate", "updateddate", "resolveddate", "resolution", "affectedversions", "fixversions"])
+    print ";".join(["key", "createdDate", "updatedDate", "resolvedDate", "resolution", "affectedVersions", "fixVersions"])
     for key, val in issueKeys.items():
         val = [str(v) for v in val]
 
