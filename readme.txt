@@ -1,1 +1,1 @@
-java -cp .:../google-gson-2.2.2-release/google-gson-2.2.2/gson-2.2.2.jar Jira_main AXIS2-4192
+Give the JIRA issue key (e.g., COLLECTIONS for the Apache collection project), then the script can crawl the Apache JIRA for bug data. Please see the paper for details: http://sail.cs.queensu.ca/publications/pubs/msr2014-chen.pdf
